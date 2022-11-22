@@ -1,47 +1,72 @@
-const express= require('express');
-const path= require('path');
-const bodyParser= require('body-parser');
-const app= express();
+const express = require('express');
+const session=require('express-session');
+const path = require('path');
+const app = express();
 
-app.set('view engine','ejs');
-app.set('views', path.join(__dirname,'view'));
-app.use(bodyParser.urlencoded({ extended: false }))
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, "views"));
 
+app.use(express.urlencoded({ extended: false }));
+app.use(session({
+    resave:false, //don't save session if unmodified
+    saveUninitialized:false, //don't create session until something stored
+    secret:'salt session setup by bereket'
+}));
 
 const PRODUCTS = [
-    { id: 10, name: 'Food', description: 'This is product Food', price: 200 },
-    { id: 20, name: 'Candy', description: 'This is product Candy', price: 300 },
-    { id: 30, name: 'Shampoo', description: 'This is product Shampoo', price: 400 },
-    { id: 40, name: 'Laundry detergent', description: 'This is product Laundry detergent', price: 500 }]
+    { id: 1, name: 'Sugar', description: 'its so sweet', price: 10 },
+    { id: 2, name: 'Salt', description: 'you might find it sour ', price:20 },
+    { id: 3, name: 'Mango', description: 'its awesome', price: 25 }
+]
 
-    // adding to cart in hard coded way
-    const Cart= [{ name: 'Food', price: 200, quantity: 3 },
-    { name: 'Shampoo', price: 400, quantity: 5}]
+app.use(function (req, res, next) {
+    if (!req.session.CART) {
+        req.session.CART = {};
+    }
+    next();
+});
 
-
-    var prodIndex;
-
-    app.get('/product/:id',(req,res)=>{
-        prodIndex= PRODUCTS.findIndex(pr=>pr.id==parseInt(req.params.id));
-        if(prodIndex<0){
-            res.send("this requested product is not avialble")
-        }
-        else{
-            res.render('product',{
-                id:PRODUCTS[prodIndex].id,
-                name:PRODUCTS[prodIndex].name,
-                description:PRODUCTS[prodIndex].description,
-                price:PRODUCTS[prodIndex].price
-            })
-        }
-    })
-
-    app.post('/product/addToCart',(req,res)=>{
-
-        Cart.push(PRODUCTS.find(e => e.id === parseInt(req.body.id)));
-    res.render("shoppingcart", {
-        products: Cart
+app.get('/product/1', (req, res) => {
+    res.render("product", {
+        ...PRODUCTS.find(prod => prod.id === 1)
     });
-    })
+});
 
-    app.listen(3300);
+app.get('/product/2', (req, res) => {
+    res.render("product", {
+        ...PRODUCTS.find(prod => prod.id === 2)
+    });
+});
+
+app.get('/product/3', (req, res) => {
+    res.render("product", {
+        ...PRODUCTS.find(prod => prod.id === 3)
+    });
+});
+
+app.post('/addToCart', (req, res, next) => {
+    let item = req.body;
+    let exist = req.session.CART[item.name];
+    if (exist) {
+        exist.quantity += 1;
+    } else {
+        item.quantity = 1;
+        req.session.CART[item.name] = item;
+    }
+    res.redirect( "/cart");
+});
+
+app.get('/cart', (req, res, next) => {
+    res.render("shoppingcart", {
+        products: req.session.CART
+    });
+});
+
+app.use((req, res) => {
+    res.status(404).send({
+    status: 404,
+    error: "Page Not Found"
+    })
+   })
+
+app.listen(3000);
