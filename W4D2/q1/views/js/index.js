@@ -3,6 +3,7 @@ $(() => {
     const addedSuccess = () => {
         $("#fname").val("");
         $("#lname").val("");
+        $("#Atime").val("");
         $("#msg").text("Data added successfully");
         $("#fname").focus();
         setTimeout(clearMsg, 3000);
@@ -16,6 +17,7 @@ $(() => {
         const data = {
             fname: $("#fname").val(),
             lname: $("#lname").val(),
+            Arrivaltime:$("#Atime").val(),
             food: $("#food").val(),
         };
         $.post({
