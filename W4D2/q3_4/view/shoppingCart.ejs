@@ -1,11 +1,12 @@
 <%- include('upper.ejs')%>
-    <ol>
-        <% for (let i=0; i < products.length; i++) { %>
-            <li>Name: <%= products[i].name %>,
-                    Price: <%= products[i].price %>
-                        Quantity: <%= products[i].quantity %>
+<h1>Shopping cart</h1>
+    <ul>
+        <% for (let key in products) { %>
+            <li>Name: <%= products[key].name %>,
+                    Price: <%= products[key].price %>
+                        Quantity: <%= products[key].quantity %>
                             <% } %>
             </li>
-    </ol>
+    </ul>
 
-    <%- include('lower.ejs')%>
+    <%- include('lower.ejs')%>  

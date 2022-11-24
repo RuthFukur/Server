@@ -1,72 +1,91 @@
 const express = require('express');
-const session=require('express-session');
 const path = require('path');
+const url = require('url');
+const session = require('express-session')
 const app = express();
 
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, "views"));
 
-app.use(express.urlencoded({ extended: false }));
+app.set('views', path.join(__dirname, "view"));
+app.use('/js', express.static(path.join(__dirname, 'view', 'js')));
+
+app.use(express.json());
+
 app.use(session({
-    resave:false, //don't save session if unmodified
-    saveUninitialized:false, //don't create session until something stored
-    secret:'salt session setup by bereket'
+    resave: false,
+    saveUninitialized: false,
+    secret: 'salt for cookie signing',
 }));
 
 const PRODUCTS = [
-    { id: 1, name: 'Sugar', description: 'its so sweet', price: 10 },
-    { id: 2, name: 'Salt', description: 'you might find it sour ', price:20 },
-    { id: 3, name: 'Mango', description: 'its awesome', price: 25 }
-]
+    { id: 1, name: 'Product A', description: 'This is product A', price: 3000 },
+    { id: 2, name: 'Product B', description: 'This is product B', price: 5000 },
+    { id: 3, name: 'Product C', description: 'This is product C', price: 7000 },
+    { id: 4, name: 'Product D', description: 'This is product D', price: 9000 }]
 
 app.use(function (req, res, next) {
-    if (!req.session.CART) {
-        req.session.CART = {};
+    if (!req.session.cart) {
+        req.session.cart = {};
     }
     next();
 });
 
 app.get('/product/1', (req, res) => {
     res.render("product", {
-        ...PRODUCTS.find(prod => prod.id === 1)
+        ...PRODUCTS.find(e => e.id === 1),
+        total: getTotalCount(req.session.cart)
     });
 });
 
 app.get('/product/2', (req, res) => {
     res.render("product", {
-        ...PRODUCTS.find(prod => prod.id === 2)
+        ...PRODUCTS.find(e => e.id === 2),
+        total: getTotalCount(req.session.cart)
     });
 });
 
 app.get('/product/3', (req, res) => {
     res.render("product", {
-        ...PRODUCTS.find(prod => prod.id === 3)
+        ...PRODUCTS.find(e => e.id === 3),
+        total: getTotalCount(req.session.cart)
+    });
+});
+
+app.get('/product/4', (req, res) => {
+    res.render("product", {
+        ...PRODUCTS.find(e => e.id === 4),
+        total: getTotalCount(req.session.cart)
     });
 });
 
 app.post('/addToCart', (req, res, next) => {
     let item = req.body;
-    let exist = req.session.CART[item.name];
+
+    let exist = req.session.cart[item.name];
     if (exist) {
         exist.quantity += 1;
     } else {
         item.quantity = 1;
-        req.session.CART[item.name] = item;
+        req.session.cart[item.name] = item;
     }
-    res.redirect( "/cart");
+
+    res.status(200);
+    res.json({ "total": getTotalCount(req.session.cart) });
 });
 
-app.get('/cart', (req, res, next) => {
+app.get('/', (req, res, next) => {
     res.render("shoppingcart", {
-        products: req.session.CART
+        products: req.session.cart,
+        total: getTotalCount(req.session.cart)
     });
 });
 
-app.use((req, res) => {
-    res.status(404).send({
-    status: 404,
-    error: "Page Not Found"
-    })
-   })
+function getTotalCount(obj) {
+    let quantity = 0;
+    for (key in obj) {
+        quantity += obj[key].quantity;
+    }
+    return quantity;
+}
 
 app.listen(3000);
